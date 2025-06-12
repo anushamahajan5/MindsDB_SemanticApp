@@ -49,9 +49,9 @@ pip install flask mindsdb-sdk python-dotenv / Install requirements: `pip install
 docker run -p 47334:47334 mindsdb/mindsdb
 ```
 5. **Create a `.env` file in your project root:**
+```
 COHERE_API_KEY=your-cohere-api-key
-
-
+```
 6. **Start the Flask app:**
 ```
 python app.py
