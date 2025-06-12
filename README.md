@@ -72,7 +72,7 @@ http://localhost:5000
 - **About:** Learn more about the app and its features.
 
 ## Project Structure
-
+<pre>
 company-knowledge-assistant/
 ├── app.py # Flask application
 ├── README.md # This file
@@ -85,7 +85,7 @@ company-knowledge-assistant/
     ├── browse.html
     ├── results.html
     └── search.html
-
+</pre>
 ---
 
 ## License
@@ -99,6 +99,7 @@ MIT
 - **MindsDB** for knowledge base management
 - **Cohere** for semantic search and embeddings
 - **Bootstrap** for the modern UI
+- **Docker** for local MindsDB setup
 
 ---
 
