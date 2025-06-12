@@ -28,7 +28,7 @@ A modern web application for searching, browsing, and managing company policies,
 
 1. **Clone the repository:**
 ```
-git clone https://github.com/anushamahajan5/company-knowledge-assistant.git
+git clone https://github.com/anushamahajan5/MindsDB_SemanticApp.git
 cd company-knowledge-assistant
 ```
 
