@@ -1,60 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>About Company Knowledge Assistant</title>
+    <title>About Company FAQ & Policy Assistant</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .logo { font-weight: 700; color: #0d6efd; }
+        .feature-icon {
+            font-size: 1.7rem;
+            color: #0d6efd;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .about-hero {
+            background: linear-gradient(90deg, #e3f0ff 0%, #f8f9fa 100%);
+            border-radius: 1rem 1rem 0 0;
+            padding: 2rem 2rem 1rem 2rem;
+            text-align: center;
+        }
+        .about-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        .about-hero p {
+            font-size: 1.1rem;
+            color: #495057;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
         <div class="container">
-            <a class="navbar-brand" href="/">Company Knowledge</a>
+            <a class="navbar-brand logo" href="/">Company FAQ</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="/">Search</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/browse">Browse</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/add">Add Document</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/about">About</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/browse">FAQs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search">Search</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/add">Add FAQ/Policy</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/summarize">Summarize</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/chat">Chat with AI</a></li>
                 </ul>
             </div>
         </div>
     </nav>
     <div class="container">
         <div class="card shadow-sm mb-4">
+            <div class="about-hero">
+                <h1>About Company FAQ & Policy Assistant</h1>
+                <p>
+                    <span class="badge bg-primary mb-2">AI-Powered</span><br>
+                    The <strong>Company FAQ & Policy Assistant</strong> helps employees quickly find answers, access policies, and get AI-powered summaries—all in one place.
+                </p>
+            </div>
             <div class="card-body">
-                <h1 class="card-title text-primary mb-4">About Company Knowledge Assistant</h1>
-                <p class="card-text">
-                    The <strong>Company Knowledge Assistant</strong> is a modern web application designed to help organizations efficiently search, manage, and access company policies, meeting notes, and other important documents using cutting-edge semantic search technology.
-                </p>
-                <p class="card-text">
-                    <strong>Powered by Cohere AI and MindsDB</strong>, this tool goes beyond simple keyword matching to understand the meaning of your queries, delivering more accurate and relevant results.
-                </p>
-                <p class="card-text">
-                    <strong>Key Features:</strong>
-                </p>
-                <ul class="list-group list-group-flush mb-3">
-                    <li class="list-group-item">
-                        <strong>Natural Language Search:</strong> Find information using everyday language—no need for exact keywords.
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Department Filtering:</strong> Narrow results by department such as HR, Marketing, Finance, or IT.
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Browse All Documents:</strong> View the entire knowledge base at a glance.
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Add New Documents:</strong> Easily upload or enter new policies, meetings, or other documents.
-                    </li>
+                <h5 class="mb-3">Powered by <span class="text-primary">OpenAI</span> and <span class="text-primary">MindsDB</span></h5>
+                <ul class="feature-list list-unstyled mb-4">
+                    <li><i class="bi bi-search feature-icon"></i><strong>Natural Language Search:</strong> Find answers using everyday language—no need for exact keywords.</li>
+                    <li><i class="bi bi-funnel-fill feature-icon"></i><strong>Department Filtering:</strong> Browse by department (HR, Marketing, Finance, IT, Legal, etc.).</li>
+                    <li><i class="bi bi-stars feature-icon"></i><strong>AI-Powered Summarization:</strong> Get concise summaries of any FAQ or policy.</li>
+                    <li><i class="bi bi-chat-dots feature-icon"></i><strong>Chat with AI:</strong> Ask questions in natural language and get instant answers.</li>
+                    <li><i class="bi bi-plus-circle feature-icon"></i><strong>Add New Content:</strong> Easily add new FAQs or policies.</li>
                 </ul>
-                <p class="card-text">
-                    <strong>Why use Company Knowledge Assistant?</strong>
-                </p>
-                <p class="card-text">
-                    This tool is ideal for teams looking to streamline information retrieval, reduce time spent searching for documents, and ensure everyone has access to the latest company knowledge.
-                </p>
+                <div class="alert alert-info">
+                    <strong>Why use this assistant?</strong><br>
+                    Streamline information retrieval, reduce time spent searching, and ensure everyone has access to the latest company knowledge.
+                </div>
                 <a href="/" class="btn btn-outline-primary mt-3">Back to Search</a>
             </div>
         </div>
