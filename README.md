@@ -1,13 +1,6 @@
 # 🌐 Company Knowledge Assistant 🧠✨
 
 Your AI-powered company knowledge base and assistant, built with MindsDB, OpenAI, and Flask.
-semantic search not working
-
-feedback analysis agents not working they are useless
-
-create article video in GitHub
-
-check if all points of quest met 
 
 ---
 
