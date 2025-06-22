@@ -1,38 +1,56 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Browse FAQs & Policies</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .logo { font-weight: 700; color: #0d6efd; }
+        .logo {
+            font-weight: 700;
+            color: #0d6efd;
+        }
+
         .about-hero {
             background: linear-gradient(90deg, #e3f0ff 0%, #f8f9fa 100%);
             border-radius: 1rem 1rem 0 0;
             padding: 2rem 2rem 1rem 2rem;
             text-align: center;
         }
+
         .about-hero h1 {
             font-size: 2.5rem;
             font-weight: 700;
             color: #0d6efd;
         }
+
         .about-hero p {
             font-size: 1.1rem;
             color: #495057;
         }
-        .department-badge { background-color: #0d6efd; color: white; }
-        .doc-type-badge { background-color: #6c757d; color: white; }
+
+        .department-badge {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        .doc-type-badge {
+            background-color: #6c757d;
+            color: white;
+        }
+
         .accordion-button:not(.collapsed) {
             color: #0d6efd;
             background-color: #e3f0ff;
         }
+
         .faq-question {
             font-weight: 600;
             font-size: 1.1rem;
         }
     </style>
 </head>
+
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
         <div class="container">
@@ -48,6 +66,7 @@
                     <li class="nav-item"><a class="nav-link" href="/add">Add FAQ/Policy</a></li>
                     <li class="nav-item"><a class="nav-link" href="/summarize">Summarize</a></li>
                     <li class="nav-item"><a class="nav-link" href="/chat">Chat with AI</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/feedback">Feedback</a></li>
                 </ul>
             </div>
         </div>
@@ -65,45 +84,45 @@
                 <form method="GET" action="/browse" class="mb-4">
                     <select name="department" class="form-select mb-3" onchange="this.form.submit()">
                         <option value="">All Departments</option>
-                        <option value="HR" {% if department == 'HR' %}selected{% endif %}>HR</option>
-                        <option value="Marketing" {% if department == 'Marketing' %}selected{% endif %}>Marketing</option>
-                        <option value="Finance" {% if department == 'Finance' %}selected{% endif %}>Finance</option>
-                        <option value="IT" {% if department == 'IT' %}selected{% endif %}>IT</option>
-                        <option value="Legal" {% if department == 'Legal' %}selected{% endif %}>Legal</option>
-                        <option value="Sales" {% if department == 'Sales' %}selected{% endif %}>Sales</option>
-                        <option value="Engineering" {% if department == 'Engineering' %}selected{% endif %}>Engineering</option>
-                        <option value="Support" {% if department == 'Support' %}selected{% endif %}>Support</option>
-                        <option value="R&D" {% if department == 'R&D' %}selected{% endif %}>R&D</option>
+                        <option value="HR" {% if department=='HR' %}selected{% endif %}>HR</option>
+                        <option value="Marketing" {% if department=='Marketing' %}selected{% endif %}>Marketing</option>
+                        <option value="Finance" {% if department=='Finance' %}selected{% endif %}>Finance</option>
+                        <option value="IT" {% if department=='IT' %}selected{% endif %}>IT</option>
+                        <option value="Legal" {% if department=='Legal' %}selected{% endif %}>Legal</option>
+                        <option value="Sales" {% if department=='Sales' %}selected{% endif %}>Sales</option>
+                        <option value="Engineering" {% if department=='Engineering' %}selected{% endif %}>Engineering
+                        </option>
+                        <option value="Support" {% if department=='Support' %}selected{% endif %}>Support</option>
+                        <option value="R&D" {% if department=='R&D' %}selected{% endif %}>R&D</option>
                     </select>
                 </form>
-                <a href="/about" class="btn btn-outline-primary mb-3">
+                <a href="/" class="btn btn-outline-primary mb-3">
                     <i class="bi bi-arrow-left"></i> Back to About
                 </a>
-                <div class="accordion" id="faqAccordion">
-                    {% for result in results %}
-                    <div class="accordion-item mb-2">
-                        <h2 class="accordion-header" id="heading{{ loop.index }}">
-                            <button class="accordion-button collapsed faq-question" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
-                                <i class="bi bi-file-text me-2"></i>{{ result.content }}
-                                <span class="badge department-badge ms-2">{{ result.department }}</span>
-                                <span class="badge doc-type-badge ms-2">{{ result.doc_type }}</span>
-                            </button>
-                        </h2>
-                        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                <strong><i class="bi bi-building"></i> Department:</strong> {{ result.department }}<br>
-                                <strong><i class="bi bi-tag"></i> Type:</strong> {{ result.doc_type }}
-                            </div>
-                        </div>
+                <!-- Simple Q&A List -->
+                {% for result in results %}
+                <div class="mb-4 p-3 border rounded bg-white">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-question-circle me-2 text-primary"></i>
+                        <span class="faq-question">{{ result.content }}</span>
+                        <span class="badge department-badge ms-2">{{ result.department }}</span>
+                        <span class="badge doc-type-badge ms-2">{{ result.doc_type }}</span>
                     </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> No FAQs found for this department.
+                    <div class="ps-4">
+                        <i class="bi bi-chat-left-text text-secondary"></i>
+                        <span class="fw-semibold">Answer:</span>
+                        <span>{{ result.answer }}</span>
                     </div>
-                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No FAQs found for this department.
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
+
 </body>
+
 </html>
