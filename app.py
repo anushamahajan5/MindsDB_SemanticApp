@@ -22,7 +22,7 @@ def create_knowledge_base():
     global kb
     openai_api_key = os.getenv('OPENAI_API_KEY')
     try:
-        project.query(f"""
+        result = project.query(f"""
         CREATE KNOWLEDGE_BASE company_kb
         USING
             embedding_model = {{
@@ -33,6 +33,7 @@ def create_knowledge_base():
             metadata_columns = ['department', 'doc_type','answer'],
             content_columns = ['content']
         """)
+        result.fetch()  # Ensure the query is executed
         kbs = project.knowledge_bases.list()
         print("Available Knowledge Bases:", [kb.name for kb in kbs])
         kb = project.knowledge_bases.get('company_kb')
@@ -54,7 +55,7 @@ def create_feedback_knowledge_base():
             }},
             metadata_columns = ['doc_id', 'rating','analysis'],
             content_columns = ['comment']
-        """)
+        """).fetch()  # Ensure the query is executed
         kbs = project.knowledge_bases.list()
         print("Available Knowledge Bases:", [kb.name for kb in kbs])
         kb = project.knowledge_bases.get('feedback_kb')
@@ -63,17 +64,15 @@ def create_feedback_knowledge_base():
         print(f"Knowledge Base error: {e}")
 
 def create_feedback_analysis_model():
-    openai_api_key = os.getenv('OPENAI_API_KEY')
     try:
-        project.query(f"""
-        CREATE MODEL feedback_analysis_model
+        project.query("""
+        CREATE MODEL IF NOT EXISTS feedback_analysis_model
         PREDICT analysis
         USING
-            engine = 'openai',
-            model_name = 'gpt-3.5-turbo',  # or 'gpt-4' if available
-            openai_api_key = '{openai_api_key}',
-           prompt_template = 'Analyze this feedback and describe the sentiment strictly as "positive", "neutral", or "negative". Also provide key points and actionable suggestions. Feedback: {comment}';
-        """)
+            engine = 'openai_engine',
+            model_name = 'gpt-3.5-turbo',
+            prompt_template = 'Analyze this feedback and describe the sentiment strictly as "positive", "neutral", or "negative". Feedback: {{comment}}'
+        """).fetch()
         print("Feedback analysis model created successfully")
     except Exception as e:
         print("Error creating feedback analysis model:", str(e))
@@ -101,64 +100,151 @@ def submit_feedback(doc_id, rating, comment, analysis=None):
     metadata = json.dumps({
         'doc_id': doc_id,
         'rating': rating,
-        'analysis': analysis or '' 
+        'analysis': analysis or ''
     })
     project.query(f"""
         INSERT INTO feedback_kb (comment, metadata)
         VALUES ('{comment}', '{metadata}')
-    """)
+    """).fetch()  # Ensure the query is executed
+
+def setup_test_questions():
+    test_questions = [
+        {"doc_id": 1, "question": "How much vacation per year?", "expected_answer": "30 days vacation"},
+        {"doc_id": 2, "question": "When are Marketing team meetings?", "expected_answer": "Marketing team meetings every Wednesday at 2pm."},
+        {"doc_id": 3, "question": "What is the dress code?", "expected_answer": "Smart casual"},
+        {"doc_id": 4, "question": "Where to submit reimbursements?", "expected_answer": "Upload receipts in the portal within 7 days"},
+        {"doc_id": 5, "question": "What is the WFH policy?", "expected_answer": "Work from home allowed 2 days/week with approval"}
+    ]
+
+    # Drop the table if it exists
+    project.query("DROP TABLE IF EXISTS files.test_questions").fetch()
+
+    # Create test table with question column
+    project.query("""
+    CREATE TABLE IF NOT EXISTS files.test_questions (
+        doc_id INT PRIMARY KEY,
+        question TEXT,
+        expected_answer TEXT
+    )
+    """).fetch()
+
+    # Insert test questions
+    for q in test_questions:
+        project.query(f"""
+        INSERT INTO files.test_questions (doc_id, question, expected_answer)
+        VALUES ({q['doc_id']}, '{q['question'].replace("'", "''")}', '{q['expected_answer'].replace("'", "''")}')
+        """).fetch()
+
+    print("Test questions table created and populated")
+
+def evaluate_knowledge_base():
+    openai_api_key = os.getenv('OPENAI_API_KEY')
+    setup_test_questions()  # Ensure test questions are set up
+
+    test_data = project.query("SELECT * FROM files.test_questions").fetch()
+    if test_data.empty:
+        print("Test table is empty! Check your insert statements.")
+        return []
+
+    try:
+        result = project.query(f"""
+        EVALUATE KNOWLEDGE_BASE company_kb
+        USING
+            test_table = files.test_questions,
+            version = 'doc_id',
+            evaluate = true,
+            llm = {{
+                'provider': 'openai',
+                'api_key': '{openai_api_key}',
+                'model': 'gpt-4'
+            }}
+        """)
+        results= result.fetch()
+        print(results)
+        return results.to_dict(orient='records') if not results.empty else []
+
+    except Exception as e:
+        print(f"Evaluation error: {e}")
+        return []
 
 def setup_ai_tables():
-    openai_api_key = os.getenv('OPENAI_API_KEY')
-    project.query(f"""
-    CREATE ML_ENGINE openai_engine FROM openai
-    USING api_key = '{openai_api_key}';
-    """)
-    project.query(f"""
-    CREATE MODEL document_summarizer
-    PREDICT summary
-    USING
-        engine = 'openai_engine',
-        model_name = 'gpt-3.5-turbo',
-        prompt_template = 'Summarize this company document: {{content}}';
-    """)
-    print("AI tables created")
+    openai_api_key = os.getenv("OPENAI_API_KEY", "")
+    if not openai_api_key:
+        print("Warning: OPENAI_API_KEY not set for AI tables setup.")
+    try:
+        project.query(
+            f"""
+            CREATE ML_ENGINE IF NOT EXISTS openai_engine FROM openai
+            USING api_key = '{openai_api_key}';
+            """
+        ).fetch() 
+        project.query(
+            """
+            CREATE MODEL IF NOT EXISTS document_summarizer
+            PREDICT summary
+            USING
+            engine = 'openai_engine',
+            model_name = 'gpt-3.5-turbo',
+            prompt_template = 'Summarize this company document: {{content}}';
+        """
+        ).fetch() 
+        print("AI tables created")
+    except Exception as e:
+        print(f"Error setting up AI tables: {e}")
+
+def drop_existing_objects():
+    try:
+        project.query("DROP MODEL IF EXISTS document_summarizer").fetch()
+        project.query("DROP MODEL IF EXISTS feedback_analysis_model").fetch()
+        project.query("DROP ML_ENGINE IF EXISTS openai_engine").fetch()
+        project.query("DROP KNOWLEDGE_BASE IF EXISTS company_kb").fetch()
+        project.query("DROP KNOWLEDGE_BASE IF EXISTS feedback_kb").fetch()
+        print("Dropped existing objects")
+    except Exception as e:
+        print("Error dropping objects:", str(e))
 
 def insert_sample_data():
+    kb = project.knowledge_bases.get('company_kb')
+    feedback_kb = project.knowledge_bases.get('feedback_kb')
+
     documents = [
-        {"content": "ompany vacation per year.", "department": "HR", "doc_type": "policy", "answer": "30 days vacation"},
-        {"content": "The office Open?", "department": "Operations", "doc_type": "hours", "answer": "9am to 5pm"}
+        {"content": "How much vacation per year?", "department": "HR", "doc_type": "policy", "answer": "30 days vacation"},
+        {"content": "The office Open?", "department": "Support", "doc_type": "announcement", "answer": "9am to 5pm"},
+        {"content": "When are Marketing team meetings?", "department": "Marketing", "doc_type": "announcement", "answer": "Marketing team meetings every Wednesday at 2pm."},
+        {"content": "What is the dress code?", "department": "HR", "doc_type": "policy", "answer": "Smart casual"},
+        {"content": "Where to submit reimbursements?", "department": "Finance", "doc_type": "policy", "answer": "Upload receipts in the portal within 7 days"},
+        {"content": "What is the WFH policy?", "department": "HR", "doc_type": "policy", "answer": "Work from home allowed 2 days/week with approval"},
+        {"content": "When is the compliance test scheduled?", "department": "HR", "doc_type": "test", "answer": "Office hours"}
     ]
-
     feedback_documents = [
-        {"comment": "The vacation policy is great!", "doc_id": 1, "rating": 5, "analysis": "Positive feedback on vacation policy"},
-        {"comment": "The office hours are too short.", "doc_id": 2, "rating": 2, "analysis": "Negative feedback on office hours"}
+        {"comment": "The vacation policy is great!", "doc_id": 1, "rating": 5, "analysis": "Positive"},
+        {"comment": "The office hours are too short.", "doc_id": 2, "rating": 2, "analysis": "Negative"},
+        {"comment": "I love the marketing meetings.", "doc_id": 3, "rating": 5, "analysis": "Positive"},
+        {"comment": "Dress code is too strict.", "doc_id": 4, "rating": 3, "analysis": "Neutral"},
+        {"comment": "Reimbursement process is confusing.", "doc_id": 5, "rating": 2, "analysis": "Negative"},
+        {"comment": "WFH policy is flexible and helpful.", "doc_id": 6, "rating": 5, "analysis": "Positive"},
+        {"comment": "Compliance test was easy to pass.", "doc_id": 7, "rating": 4, "analysis": "Positive"}
     ]
-    
-    if kb:
-        try:
-            # Batch insert using raw SQL
-            values = ",".join([
-                f"('{doc['content']}', '{doc['department']}', '{doc['doc_type']}', '{doc['answer']}')" 
-                for doc in documents
-            ])
-            project.query(f"""
-            INSERT INTO company_kb (content, department, doc_type, answer)
-            VALUES {values}
-            """)
 
-            feedback_values = ",".join([
-                f"('{doc['comment']}', {doc['doc_id']}, {doc['rating']}, '{doc['analysis']}')" 
-                for doc in feedback_documents
-            ])
-            project.query(f"""
-            INSERT INTO feedback_kb (comment, doc_id, rating, analysis)
-            VALUES {feedback_values}
-            """)
+    # Insert into company_kb
+    for doc in documents:
+        kb.insert({
+            'content': doc['content'],
+            'department': doc['department'],
+            'doc_type': doc['doc_type'],
+            'answer': doc['answer']
+        })
 
-            print("Sample FAQs & policies inserted successfully")
-        except Exception as e:
-            print(f"Insert error: {e}")
+    # Insert into feedback_kb
+    for doc in feedback_documents:
+        feedback_kb.insert({
+            'comment': doc['comment'],
+            'doc_id': doc['doc_id'],
+            'rating': doc['rating'],
+            'analysis': doc['analysis']
+        })
+
+    print("Sample data inserted successfully")
 
 def create_index():
     project.query("CREATE INDEX ON company_kb")
@@ -203,16 +289,21 @@ def semantic_search(query, department=None):
         return []
 
 def setup_update_job():
-    project.query("""
-    CREATE JOB update_company_kb AS (
-        INSERT INTO company_kb (content, department, doc_type, answer)
-        SELECT content, department, doc_type, answer
-        FROM files.new_documents
-        WHERE id > COALESCE(LAST, 0)
-    )
-    EVERY day
-    """)
-    print("Update job created")
+    try:
+        project.query("DROP JOB IF EXISTS update_company_kb").fetch()
+        project.query("""
+        CREATE JOB update_company_kb AS (
+            INSERT INTO company_kb (content, metadata)
+            SELECT content,
+                   json_object('department', department, 'doc_type', doc_type, 'answer', answer)
+            FROM files.new_documents
+            WHERE id > COALESCE(LAST, 0)
+        )
+        EVERY day
+        """).fetch()
+        print("Update job created")
+    except Exception as e:
+        print(f"Job error: {e}")
 
 def create_openai_model():
     openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -222,11 +313,11 @@ def create_openai_model():
         PREDICT answer
         USING
             engine = 'openai',
-            model_name = 'gpt-3.5-turbo',  # or 'gpt-4' if available
+            model_name = 'gpt-3.5-turbo', 
             openai_api_key = '{openai_api_key}',
             prompt_template = 'You are a helpful assistant for company FAQs and policies. Use the knowledge base to answer: {question}'
 
-        """)
+        """).fetch() 
         print("OpenAI model created successfully")
     except Exception as e:
         print("Error creating OpenAI model:", str(e))
@@ -235,15 +326,30 @@ def get_summarized_results(query):
     summaries = []
     if query:
         try:
+            models = [m.name for m in project.models.list()]
+            print("Available models:", models)
+            if 'document_summarizer' not in models:
+                print("document_summarizer model not found!")
+                summaries.append({
+                    'original': query,
+                    'summary': 'Error: Summarizer model not found.'
+                })
+                return summaries
+            
             summary = project.query(f"""
             SELECT summary FROM document_summarizer
-            WHERE content = '{query}'
+            WHERE content = '{query.replace("'", "''")}'
             """).fetch()
             if summary is not None and not summary.empty:
               summaries.append({
                 'original': query,
                 'summary': summary.iloc[0]['summary']
               })
+            else:
+              summaries.append({
+                    'original': query,
+                    'summary': 'No summary generated.'
+                })
         except Exception as e:
             # Log the error for debugging
             print(f"Error occurred during summarization: {e}")
@@ -281,13 +387,12 @@ def browse():
     department = request.args.get('department', '')
     results = project.query("SELECT * FROM company_kb").fetch()
     results = results.to_dict(orient='records')
+    print("Fetched results from company_kb:", results)
     processed = []
     for row in results:
         content = row.get('chunk_content', '')
         metadata = json.loads(row.get('metadata', '{}'))
         dept = metadata.get('department', '')
-        # Clean up department name if needed
-        dept = dept.replace('department: ', '')
         processed.append({
             'content': content,
             'department': dept,
@@ -303,22 +408,18 @@ def browse():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_document():
+    kb = project.knowledge_bases.get('company_kb')
     if request.method == 'POST':
         content = request.form['content']
         answer = request.form['answer']
         department = request.form['department']
         doc_type = request.form['doc_type']
-        metadata = json.dumps({
-            'answer': answer,
+        kb.insert({
+            'content': content,
             'department': department,
-            'doc_type': doc_type
+            'doc_type': doc_type,
+            'answer': answer
         })
-        sql = f"""
-        INSERT INTO company_kb (content, metadata)
-        VALUES ('{content}', '{metadata}')
-        """
-        project.query(sql)
-        flash('Document added successfully!', 'success')
         return redirect(url_for('browse'))
     return render_template('add.html')
 
@@ -331,6 +432,16 @@ def summarize():
             return render_template('summarize.html', summaries=summaries, query=query)
     # GET: Show the form
     return render_template('summarize.html', summaries=None, query=None)
+
+@app.route('/evaluate', methods=['GET', 'POST'])
+def evaluate():
+    if request.method == 'POST':
+        # Optionally, you could allow users to upload a test file or input test questions here
+        pass
+    # Run evaluation and get results
+    results = evaluate_knowledge_base()
+    return render_template('evaluate.html', results=results)
+
 
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
@@ -367,43 +478,36 @@ def feedback():
         comment = request.form.get('comment', '')
         print(f"Received feedback: doc_id={doc_id}, rating={rating}, comment={comment}")
 
-        # Insert feedback into feedback_kb
-        submit_feedback(doc_id, rating, comment)
-
         # Analyze feedback using the agent
         analysis = analyze_feedback(comment)
         print("Feedback analysis:", analysis)
-        flash(f'Feedback submitted and analyzed: {analysis}', 'success') 
-        return redirect(url_for('browse'))
+
+        # Insert feedback into feedback_kb
+        submit_feedback(doc_id, rating, comment)
+
+        flash(f'Feedback submitted and analyzed: {analysis}', 'popup') 
+        return redirect(url_for('feedback'))
     return render_template('feedback.html')
 
 
 def analyze_feedback(comment):
-    analysis = None
     try:
         result = project.query(f"""
             SELECT analysis
             FROM feedback_analysis_model
             WHERE comment = '{comment}'
         """).fetch()
-        analysis = result.iloc[0]['analysis'] if not result.empty else None
+        return result.iloc[0]['analysis'] if not result.empty else "No analysis found"
     except Exception as e:
         print("Error analyzing feedback:", str(e))
-        analysis = "Could not analyze feedback due to an error."
-    return analysis
-    print(f"Analysis for feedback '{comment}': {analysis}")
-
-@app.route('/analyze-feedback', methods=['POST'])
-def analyze_feedback_route():
-    feedback = request.form.get('feedback')
-    if feedback:
-        analysis = analyze_feedback(feedback)
-        return jsonify({'analysis': analysis})
-    return jsonify({'error': 'No feedback provided'})
+        return "Could not analyze feedback due to an error."
 
 if __name__ == '__main__':
+    drop_existing_objects()
+    setup_ai_tables()
     create_knowledge_base()
-    setup_ai_tables()  # <-- Added to ensure Ollama models are ready
+    create_feedback_knowledge_base()
+    create_feedback_analysis_model()
     insert_sample_data()
     create_index()
     setup_update_job()
