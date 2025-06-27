@@ -152,13 +152,10 @@ def evaluate_knowledge_base():
         USING
             test_table = files.test_questions,
             version = 'doc_id',
-            evaluate = true,
-            llm = {{
-                'provider': 'openai',
-                'api_key': '{openai_api_key}',
-                'model': 'gpt-4'
-            }}
+            evaluate=true
+                    
         """)
+
         results= result.fetch()
         print(results)
         return results.to_dict(orient='records') if not results.empty else []
@@ -423,6 +420,38 @@ def add_document():
         return redirect(url_for('browse'))
     return render_template('add.html')
 
+@app.route('/jobs', methods=['GET'])
+def list_jobs():
+    jobs = project.jobs.list()
+    jobs_info = [{'name': job.name, 'query': job.data.get('query'), 'schedule': job.data.get('schedule_str')} for job in jobs]
+    return render_template('jobs.html', jobs=jobs_info)
+
+@app.route('/jobs/create', methods=['POST'])
+def create_job():
+    name = request.form.get('name')
+    query = request.form.get('query')
+    repeat_str = request.form.get('repeat_str', None)
+
+    # Basic validation
+    if not name or not query:
+        flash('Job name and query are required!', 'popup')
+        return redirect(url_for('list_jobs'))
+
+    try:
+        # Try to create the job (this will fail if the query is invalid)
+        job = project.jobs.create(
+            name=name,
+            query_str=query,
+            repeat_str=repeat_str
+        )
+        flash(f'Job {name} created successfully!', 'popup')
+    except Exception as e:
+        # Show the error as a popup
+        flash(f'Error creating job: {str(e)}', 'popup')
+
+    return redirect(url_for('list_jobs'))
+
+
 @app.route('/summarize', methods=['GET', 'POST'])
 def summarize():
     if request.method == 'POST':
@@ -440,8 +469,10 @@ def evaluate():
         pass
     # Run evaluation and get results
     results = evaluate_knowledge_base()
-    return render_template('evaluate.html', results=results)
-
+    # For rendering, you may want to extract the first row if results is a list of dicts
+    # Or pass the whole list if your template can handle it
+    summary = results[0] if results else None
+    return render_template('evaluate.html', summary=summary, results=results)
 
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
@@ -472,6 +503,11 @@ def chat():
 
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
+    # Query the knowledge base
+    docs_df = project.query("SELECT id, chunk_content FROM company_kb LIMIT 10").fetch()
+    # Convert to list of dicts if not empty, else empty list
+    docs = docs_df.to_dict(orient='records') if not docs_df.empty else []
+
     if request.method == 'POST':
         doc_id = request.form.get('doc_id')
         rating = request.form.get('rating')
@@ -485,10 +521,11 @@ def feedback():
         # Insert feedback into feedback_kb
         submit_feedback(doc_id, rating, comment)
 
-        flash(f'Feedback submitted and analyzed: {analysis}', 'popup') 
+        flash(f'Feedback submitted and analyzed: {analysis}', 'popup')
         return redirect(url_for('feedback'))
-    return render_template('feedback.html')
 
+    # Always pass 'docs' to the template
+    return render_template('feedback.html', documents=docs)
 
 def analyze_feedback(comment):
     try:

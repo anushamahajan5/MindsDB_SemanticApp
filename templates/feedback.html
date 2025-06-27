@@ -10,20 +10,17 @@
             font-weight: 700;
             color: #0d6efd;
         }
-
         .about-hero {
             background: linear-gradient(90deg, #e3f0ff 0%, #f8f9fa 100%);
             border-radius: 1rem 1rem 0 0;
             padding: 2rem 2rem 1rem 2rem;
             text-align: center;
         }
-
         .about-hero h1 {
             font-size: 2.5rem;
             font-weight: 700;
             color: #0d6efd;
         }
-
         .about-hero p {
             font-size: 1.1rem;
             color: #495057;
@@ -48,7 +45,7 @@
                     <li class="nav-item"><a class="nav-link" href="/chat">Chat with AI</a></li>
                     <li class="nav-item"><a class="nav-link" href="/feedback">Feedback</a></li>
                     <li class="nav-item"><a class="nav-link" href="/evaluate">Evaluate</a></li>
-
+                    <li class="nav-item"><a class="nav-link" href="/jobs">Jobs</a></li>
                 </ul>
             </div>
         </div>
@@ -78,10 +75,14 @@
                 <form method="POST" action="/feedback">
                     <div class="mb-3">
                         <label for="doc_id" class="form-label">
-                            <i class="bi bi-file-text"></i> Document ID
+                            <i class="bi bi-file-text"></i> Document
                         </label>
-                        <input type="text" id="doc_id" name="doc_id" placeholder="Enter document ID"
-                            class="form-control" required>
+                        <select id="doc_id" name="doc_id" class="form-select" required>
+                            <option value="" selected disabled>Select a document</option>
+                            {% for doc in documents %}
+                                <option value="{{ doc.id }}">{{ doc.chunk_content }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="rating" class="form-label">
@@ -112,7 +113,5 @@
             </div>
         </div>
     </div>
-
 </body>
-
 </html>

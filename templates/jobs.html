@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Add Document</title>
+    <title>Job Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -41,71 +41,78 @@
                     <li class="nav-item"><a class="nav-link" href="/feedback">Feedback</a></li>
                     <li class="nav-item"><a class="nav-link" href="/evaluate">Evaluate</a></li>
                     <li class="nav-item"><a class="nav-link" href="/jobs">Jobs</a></li>
-
                 </ul>
             </div>
         </div>
     </nav>
     <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        {% if category == 'popup' %}
+        <script>
+            window.onload = function () {
+                alert("{{ message }}");
+            };
+        </script>
+        {% endif %}
+        {% endfor %}
+        {% endwith %}
+
         <div class="card shadow-sm mb-4">
             <div class="about-hero">
-                <h1>Add New Document</h1>
+                <h1>Job Management</h1>
                 <p>
                     <span class="badge bg-primary mb-2">AI-Powered</span><br>
-                    Add new FAQs or policies to the company knowledge base.
+                    Schedule and manage automated jobs.
                 </p>
             </div>
             <div class="card-body">
-                <form method="POST" class="mb-4">
+                <form method="POST" action="/jobs/create" class="mb-4">
                     <div class="mb-3">
-                        <label for="content" class="form-label">
-                            <i class="bi bi-question-circle"></i> Question
+                        <label for="name" class="form-label">
+                            <i class="bi bi-tag"></i> Job Name
                         </label>
-                        <input type="text" id="content" name="content" placeholder="Enter FAQ or policy question..." class="form-control" required>
+                        <input type="text" id="name" name="name" placeholder="Enter job name..." class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label for="answer" class="form-label">
-                            <i class="bi bi-chat-left-text"></i> Answer
+                        <label for="query" class="form-label">
+                            <i class="bi bi-file-text"></i> Query
                         </label>
-                        <textarea id="answer" name="answer" placeholder="Enter the answer..." class="form-control" rows="3" required></textarea>
+                        <textarea id="query" name="query" placeholder="Enter SQL query..." class="form-control" rows="3" required></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="department" class="form-label">
-                            <i class="bi bi-building"></i> Department
+                        <label for="repeat_str" class="form-label">
+                            <i class="bi bi-clock"></i> Schedule (optional, e.g. "1 hour", "1 day")
                         </label>
-                        <select id="department" name="department" class="form-select">
-                            <option value="HR">HR</option>
-                            <option value="Marketing">Marketing</option>
-                            <option value="Finance">Finance</option>
-                            <option value="IT">IT</option>
-                            <option value="Legal">Legal</option>
-                            <option value="Sales">Sales</option>
-                            <option value="Engineering">Engineering</option>
-                            <option value="Support">Support</option>
-                            <option value="R&D">R&D</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="doc_type" class="form-label">
-                            <i class="bi bi-tag"></i> Type
-                        </label>
-                        <select id="doc_type" name="doc_type" class="form-select">
-                            <option value="policy">Policy</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="test">Test</option>
-                            <option value="announcement">Announcement</option>
-                        </select>
+                        <input type="text" id="repeat_str" name="repeat_str" placeholder="Enter schedule..." class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-plus-circle"></i> Add Document
+                        <i class="bi bi-plus-circle"></i> Create Job
                     </button>
                 </form>
-                <a href="/search" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-left"></i> Back to Search
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-tag"></i> Name</th>
+                            <th><i class="bi bi-file-text"></i> Query</th>
+                            <th><i class="bi bi-clock"></i> Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.query|truncate(50) }}</td>
+                            <td>{{ job.schedule or 'Manual' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <a href="/browse" class="btn btn-outline-primary mt-3">
+                    <i class="bi bi-arrow-left"></i> Back to FAQs
                 </a>
             </div>
         </div>
     </div>
 </body>
 </html>
-
