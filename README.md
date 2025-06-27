@@ -175,19 +175,19 @@ The AI finds relevant documents and generates answers or summaries.
   
   1. Create Knowledge Base
     Test the creation of your knowledge base:
-    ```
-    CREATE KNOWLEDGE_BASE company_kb
-    USING
-     embedding_model = {
-        "provider": "openai",
-        "model_name": "text-embedding-3-small"
-     },
-     metadata_columns = ['department', 'doc_type','answer'],
-     content_columns = ['content']
+```
+CREATE KNOWLEDGE_BASE company_kb
+USING
+  embedding_model = {
+    "provider": "openai",
+    "model_name": "text-embedding-3-small"
+  },
+metadata_columns = ['department', 'doc_type','answer'],
+content_columns = ['content']
+```
 
-    ```
-    For feedbacks:
-    ```
+For feedbacks:
+```
     CREATE KNOWLEDGE_BASE feedback_kb
     USING
       embedding_model = {
@@ -196,7 +196,7 @@ The AI finds relevant documents and generates answers or summaries.
       },
       metadata_columns = ['doc_id', 'rating', 'analysis'],
       content_columns = ['comment'];
-    ```
+```
    **Note:** If your API key is not set as an environment variable in MindsDB, include the api_key field in embedding_model. Otherwise, leave it as shown in  code
 
     This will automatically add chromadb database under Datasources in left pane
