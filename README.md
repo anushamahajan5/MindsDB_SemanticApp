@@ -438,7 +438,7 @@ company-knowledge-assistant/
 ---
 
 ## 🎥 Video Demo
-https://drive.google.com/file/d/15hhDyJUSSGyKaS8Wm9v20xYUPaumV4Fh/view?usp=sharing
+[Link](https://drive.google.com/file/d/1-4EXA5nU2v-onwUYrHLChLY7GsxwwOlz/view?usp=sharing)
 
 ---
 
@@ -471,7 +471,7 @@ https://drive.google.com/file/d/15hhDyJUSSGyKaS8Wm9v20xYUPaumV4Fh/view?usp=shari
 - **✅ Evaluate the relevancy and accuracy of the documents returned by KB[20pts]**
   - Used `EVALUATE KNOWLEDGE_BASE` and OPENAI api for evaluating company kb.
 - **✅ Video & README[30pts]:**  
-  - Includes a video demo and clear README [link](https://drive.google.com/file/d/15hhDyJUSSGyKaS8Wm9v20xYUPaumV4Fh/view?usp=sharing)
+  - Includes a video demo and clear README [link](https://drive.google.com/file/d/1-4EXA5nU2v-onwUYrHLChLY7GsxwwOlz/view?usp=sharing)
 - **✅ Documentation & Showcase [5pts]:**  
   - Medium article: [link](https://medium.com/@anushamahajan5/building-a-company-knowledge-assistant-with-mindsdb-and-cohere-572dfff41b93)
 
