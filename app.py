@@ -208,10 +208,12 @@ def insert_sample_data():
         {"content": "How much vacation per year?", "department": "HR", "doc_type": "policy", "answer": "30 days vacation"},
         {"content": "The office Open?", "department": "Support", "doc_type": "announcement", "answer": "9am to 5pm"},
         {"content": "When are Marketing team meetings?", "department": "Marketing", "doc_type": "announcement", "answer": "Marketing team meetings every Wednesday at 2pm."},
+        {"content": "When is the meeting between Marketing and Sales?", "department": "Marketing", "doc_type": "announcement", "answer": "Every Friday at 3pm"},
         {"content": "What is the dress code?", "department": "HR", "doc_type": "policy", "answer": "Smart casual"},
         {"content": "Where to submit reimbursements?", "department": "Finance", "doc_type": "policy", "answer": "Upload receipts in the portal within 7 days"},
         {"content": "What is the WFH policy?", "department": "HR", "doc_type": "policy", "answer": "Work from home allowed 2 days/week with approval"},
-        {"content": "When is the compliance test scheduled?", "department": "HR", "doc_type": "test", "answer": "Office hours"}
+        {"content": "When is the compliance test scheduled?", "department": "HR", "doc_type": "test", "answer": "Office hours"},
+        {"content": "what are the number of paid vacations?", "department": "HR", "doc_type": "policy", "answer": "10 days paid vacation after quarter project completed"},
     ]
     feedback_documents = [
         {"comment": "The vacation policy is great!", "doc_id": 1, "rating": 5, "analysis": "Positive"},
@@ -249,12 +251,20 @@ def create_index():
 
 def semantic_search(query, department=None):
     query = query.replace("'", "''")
-    base_query = f"""
-    SELECT chunk_content, metadata, relevance
-    FROM company_kb
-    WHERE content = '{query}'
-    
-    """
+    if department:
+        department = department.replace("'", "''")
+        base_query = f"""
+        SELECT chunk_content, metadata, relevance
+        FROM company_kb
+        WHERE department = '{department}'
+        AND content = '{query}'
+        """
+    else:
+        base_query = f"""
+        SELECT chunk_content, metadata, relevance
+        FROM company_kb
+        WHERE content = '{query}'
+        """
     print("Executing semantic search query:", base_query)
     try:
         results = project.query(base_query).fetch()
@@ -265,7 +275,7 @@ def semantic_search(query, department=None):
             except:
                 metadata = {}
             relevance = row.get('relevance', 0)
-            if relevance > 0.6:  # <-- Only include if relevance > 0.5
+            if relevance > 0.6:
                 processed_results.append({
                     'content': row['chunk_content'],
                     'department': metadata.get('department', ''),
@@ -273,18 +283,12 @@ def semantic_search(query, department=None):
                     'answer': metadata.get('answer', ''),
                     'relevance': relevance
                 })
-        # Filter by department if specified
-        if department:
-            processed_results = [
-                r for r in processed_results
-                if r['department'].replace('department: ', '') == department
-            ]
         print("Processed results:", processed_results)
         return processed_results
     except Exception as e:
         print("Semantic search error:", str(e))
         return []
-
+    
 def setup_update_job():
     try:
         project.query("DROP JOB IF EXISTS update_company_kb").fetch()
@@ -457,7 +461,22 @@ def summarize():
     if request.method == 'POST':
         query = request.form.get('query')
         if query:
-            summaries = get_summarized_results(query)
+            # Step 1: Perform semantic search on the user's query
+            results = semantic_search(query)
+            # Step 2: Collect all relevant content into a context string
+            context = " ".join([r['content'] for r in results]) if results else ""
+            # Step 3: Summarize the combined context, not just the query
+            if context:
+                summary = project.query(f"""
+                    SELECT summary FROM document_summarizer
+                    WHERE content = '{context.replace("'", "''")}'
+                """).fetch()
+                if summary is not None and not summary.empty:
+                    summaries = [{'original': query, 'summary': summary.iloc[0]['summary']}]
+                else:
+                    summaries = [{'original': query, 'summary': 'No summary generated.'}]
+            else:
+                summaries = [{'original': query, 'summary': 'No relevant content found.'}]
             return render_template('summarize.html', summaries=summaries, query=query)
     # GET: Show the form
     return render_template('summarize.html', summaries=None, query=None)
