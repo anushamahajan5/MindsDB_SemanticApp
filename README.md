@@ -91,7 +91,7 @@ http://localhost:5000
 ```
 
 8. **Open the mindsDB GUI here:**
-Note you are going to test all queries here
+Note you can test your commands here although they are directly implemented in app and can be directly seen in th application 
 ```
 http://localhost:47334
 ```
