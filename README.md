@@ -40,7 +40,7 @@ It supports:
 
 - **Python 3.8+**
 - **Docker** (for running MindsDB locally)
-- **Cohere API Key** (for embedding and semantic search)
+- **OpenAI API Key** (for embedding and semantic search)
 - **MindsDB Python SDK**
 - **Flask**
 - **ChromaDB**
